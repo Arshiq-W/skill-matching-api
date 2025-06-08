@@ -1,5 +1,5 @@
-if not student_scores or not job_list:
-    return {"status": "error", "message": "Missing student scores or job requirements."}
+# if not student_scores or not job_list:
+#     return {"status": "error", "message": "Missing student scores or job requirements."}
 
 # Combine all skills across student and job requirements
 all_skills = set(student_scores.keys())
