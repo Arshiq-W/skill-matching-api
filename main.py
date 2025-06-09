@@ -9,7 +9,7 @@ import re
 
 app = FastAPI()
 
-CSV_FILE = "job_data.csv"
+CSV_FILE = "data/job_data.csv"
 
 class StudentRequest(BaseModel):
     student_id: str
