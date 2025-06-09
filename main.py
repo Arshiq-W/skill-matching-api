@@ -8,7 +8,7 @@ import pandas as pd
 app = FastAPI()
 
 # Load recruiter job data from CSV
-job_df = pd.read_csv("recruiter_jobs.csv")
+job_df = pd.read_csv("data/job_data.csv")
 
 # Convert comma-separated skill strings into lists
 job_df["skills"] = job_df["skills"].apply(lambda x: [skill.strip() for skill in str(x).split(',')])
