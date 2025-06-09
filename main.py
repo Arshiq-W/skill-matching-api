@@ -40,15 +40,16 @@ def match_jobs(request: MatchRequest):
 
         # Optional: Replace binary vector with expected skill score values (out of 20) if you have them
         similarity = cosine_similarity([student_vec], [job_vec])[0][0]
-
+        
         results.append({
+            "job_id": row["job_id"],
             "job_title": row["job_title"],
             "recruiter_name": row["recruiter_name"],
             "company_name": row["company_name"],
             "job_description": row["job_description"],
             "skills": row["skills"],
             "match_score": round(float(similarity * 100), 2)
-        })
+            })
 
     results.sort(key=lambda x: x["match_score"], reverse=True)
 
