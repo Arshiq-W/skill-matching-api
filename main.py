@@ -9,14 +9,13 @@ import re
 
 app = FastAPI()
 
-# Set your recruiter file name (CSV or Excel)
-CSV_FILE = "job_data.csv"  # or change to "job_data.xlsx" if Excel
+CSV_FILE = "job_data.csv"
 
 class StudentRequest(BaseModel):
     student_id: str
     student_scores: Dict[str, float]
 
-# Parse scores: handles numbers and ranges like "12-15"
+# Parse score (supports single value or ranges like "12-16")
 def parse_score(cell):
     if pd.isna(cell):
         return 0
@@ -31,7 +30,6 @@ def parse_score(cell):
     except:
         return 0
 
-# Load and format job data from file
 def load_job_data():
     ext = os.path.splitext(CSV_FILE)[1].lower()
     if ext == ".csv":
@@ -44,8 +42,19 @@ def load_job_data():
     job_list = []
     for _, row in df.iterrows():
         job_title = row["job_title"]
-        skills = {col: parse_score(row[col]) for col in df.columns if col != "job_title"}
-        job_list.append({"job_title": job_title, "skills": skills})
+        recruiter_name = row["recruiter_name"]
+        company_name = row["company_name"]
+        skills = {
+            col: parse_score(row[col])
+            for col in df.columns
+            if col not in ["job_title", "recruiter_name", "company_name"]
+        }
+        job_list.append({
+            "job_title": job_title,
+            "recruiter_name": recruiter_name,
+            "company_name": company_name,
+            "skills": skills
+        })
     return job_list
 
 @app.post("/api/match-skills")
@@ -56,13 +65,11 @@ def match_skills(request: StudentRequest):
     if not student_scores or not job_list:
         return {"status": "error", "message": "Missing student scores or job data."}
 
-    # Align all skills
     all_skills = set(student_scores.keys())
     for job in job_list:
         all_skills.update(job["skills"].keys())
     all_skills = sorted(all_skills)
 
-    # Vector for student
     student_vec = np.array([student_scores.get(skill, 0) for skill in all_skills])
 
     results = []
@@ -71,6 +78,8 @@ def match_skills(request: StudentRequest):
         similarity = cosine_similarity([student_vec], [job_vec])[0][0]
         results.append({
             "job_title": job["job_title"],
+            "company_name": job["company_name"],
+            "recruiter_name": job["recruiter_name"],
             "match_score": round(float(similarity * 100), 2)
         })
 
