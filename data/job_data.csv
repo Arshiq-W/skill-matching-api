@@ -1,4 +1,4 @@
 job_title,recruiter_name,company_name,job_description,skills
-Backend Developer,Ali Khan,TechNest,Build RESTful APIs using Laravel and SQL.,Laravel,PHP,SQL
-Data Scientist,Ayesha Rehman,DataSpark,Analyze large data sets using Python, pandas, and ML.,Python,Pandas,Machine Learning
-Frontend Developer,Sara Ahmed,Webify,Design UI using React, HTML, CSS.,React,HTML,CSS
+Backend Developer,Ali Khan,TechNest,"Build RESTful APIs using Laravel and SQL.","Laravel,PHP,SQL"
+Data Scientist,Ayesha Rehman,DataSpark,"Analyze large data sets using Python, pandas, and ML.,Python","Pandas,Machine Learning"
+Frontend Developer,Sara Ahmed,"Webify,Design UI using React", "HTML, CSS.,React,HTML,CSS"
