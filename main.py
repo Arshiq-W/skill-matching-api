@@ -14,7 +14,7 @@ class MatchRequest(BaseModel):
     student_scores: dict
     job_list: list[Job]
 
-@app.post("/match-jobs")
+@app.post("/api/match-skills")
 def match_jobs(request: MatchRequest):
     student_scores = request.student_scores
     job_list = request.job_list
