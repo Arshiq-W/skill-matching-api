@@ -1,85 +1,52 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-from typing import Dict
-import pandas as pd
+from typing import List, Dict
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
-import os
-import re
+import pandas as pd
 
 app = FastAPI()
 
-CSV_FILE = "data/job_data.csv"
+# Load recruiter job data from CSV
+job_df = pd.read_csv("recruiter_jobs.csv")
 
-class StudentRequest(BaseModel):
-    student_id: str
+# Convert comma-separated skill strings into lists
+job_df["skills"] = job_df["skills"].apply(lambda x: [skill.strip() for skill in str(x).split(',')])
+
+class MatchRequest(BaseModel):
+    student_id: int
+    selected_role: str
     student_scores: Dict[str, float]
 
-# Parse score (supports single value or ranges like "12-16")
-def parse_score(cell):
-    if pd.isna(cell):
-        return 0
-    if isinstance(cell, (int, float)):
-        return float(cell)
-    match = re.match(r"^\s*(\d+)\s*-\s*(\d+)\s*$", str(cell))
-    if match:
-        low, high = map(float, match.groups())
-        return (low + high) / 2
-    try:
-        return float(cell)
-    except:
-        return 0
-
-def load_job_data():
-    ext = os.path.splitext(CSV_FILE)[1].lower()
-    if ext == ".csv":
-        df = pd.read_csv(CSV_FILE)
-    elif ext in [".xlsx", ".xls"]:
-        df = pd.read_excel(CSV_FILE)
-    else:
-        raise ValueError("Unsupported file type")
-
-    job_list = []
-    for _, row in df.iterrows():
-        job_title = row["job_title"]
-        recruiter_name = row["recruiter_name"]
-        company_name = row["company_name"]
-        skills = {
-            col: parse_score(row[col])
-            for col in df.columns
-            if col not in ["job_title", "recruiter_name", "company_name"]
-        }
-        job_list.append({
-            "job_title": job_title,
-            "recruiter_name": recruiter_name,
-            "company_name": company_name,
-            "skills": skills
-        })
-    return job_list
-
 @app.post("/api/match-skills")
-def match_skills(request: StudentRequest):
+def match_jobs(request: MatchRequest):
     student_scores = request.student_scores
-    job_list = load_job_data()
+    if not student_scores:
+        return {"status": "error", "message": "Student scores are missing."}
 
-    if not student_scores or not job_list:
-        return {"status": "error", "message": "Missing student scores or job data."}
-
+    # Prepare all skill columns from student and all jobs
     all_skills = set(student_scores.keys())
-    for job in job_list:
-        all_skills.update(job["skills"].keys())
+    for skills in job_df["skills"]:
+        all_skills.update(skills)
     all_skills = sorted(all_skills)
 
+    # Student vector
     student_vec = np.array([student_scores.get(skill, 0) for skill in all_skills])
 
     results = []
-    for job in job_list:
-        job_vec = np.array([job["skills"].get(skill, 0) for skill in all_skills])
+
+    for _, row in job_df.iterrows():
+        job_vec = np.array([1 if skill in row["skills"] else 0 for skill in all_skills])
+
+        # Optional: Replace binary vector with expected skill score values (out of 20) if you have them
         similarity = cosine_similarity([student_vec], [job_vec])[0][0]
+
         results.append({
-            "job_title": job["job_title"],
-            "company_name": job["company_name"],
-            "recruiter_name": job["recruiter_name"],
+            "job_title": row["job_title"],
+            "recruiter_name": row["recruiter_name"],
+            "company_name": row["company_name"],
+            "job_description": row["job_description"],
+            "skills": row["skills"],
             "match_score": round(float(similarity * 100), 2)
         })
 
